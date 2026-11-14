@@ -557,6 +557,8 @@ struct HomeView: View {
     private func aqiCard(aqi: Int, response: AqiResponse, fillsHeight: Bool = false) -> some View {
         let tint = aqiColor(aqi)
         let aqiTextColor = aqiDisplayTextColor(aqi)
+        let label = AqiPalette.label(aqi, isUsAqi: viewModel.isUsAqi)
+        let standard = AqiPalette.standardName(isUsAqi: viewModel.isUsAqi)
         let rowLayout = dynamicTypeSize.isAccessibilitySize
             ? AnyLayout(VStackLayout(alignment: .leading, spacing: 6))
             : AnyLayout(HStackLayout(alignment: .lastTextBaseline))
@@ -564,16 +566,16 @@ struct HomeView: View {
             ? AnyLayout(VStackLayout(alignment: .leading, spacing: 6))
             : AnyLayout(HStackLayout())
 
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline) {
-                Text(AqiPalette.label(aqi, isUsAqi: viewModel.isUsAqi))
+                Text(label)
                     .font(.system(.title3))
                     .fontWeight(.bold)
-                    .foregroundStyle(.aqiTextColor)
+                    .foregroundStyle(aqiTextColor)
 
                 Spacer()
 
-                Text(response.showingRaw ? "Raw \(AqiPalette.standardName(isUsAqi: viewModel.isUsAqi))" : AqiPalette.standardName(isUsAqi: viewModel.isUsAqi))
+                Text(response.showingRaw ? "Raw \(standard)" : standard)
                     .font(.caption)
                     .fontWeight(.semibold)
                     .padding(.horizontal, 10)
@@ -596,7 +598,7 @@ struct HomeView: View {
                     .contentTransition(.numericText(value: Double(aqi)))
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
-                    .foregroundStyle(.aqiTextColor)
+                    .foregroundStyle(aqiTextColor)
 
                 Spacer()
 
@@ -612,14 +614,14 @@ struct HomeView: View {
             }
 
             AqiGauge(aqi: aqi, isUsAqi: viewModel.isUsAqi)
-                .padding(.vertical, 2)
+                .padding(.vertical, 0)
                 .onTapGesture {
                     showScaleSheet = true
                 }
 
             Divider()
                 .background(aqiColor(aqi).opacity(0.3))
-                .padding(.vertical, 4)
+                .padding(.vertical, 0)
 
             footerLayout {
                 if let h = viewModel.display1hTrend {
@@ -652,17 +654,9 @@ struct HomeView: View {
                 )
             }
         }
-        .padding(20)
+        .padding(16)
         .frame(maxWidth: .infinity, maxHeight: fillsHeight ? .infinity : nil, alignment: .topLeading)
-        .background(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(Color(.secondarySystemGroupedBackground))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .fill(tint.opacity(colorScheme == .dark ? 0.22 : 0.16))
-                )
-        )
-        .animation(reduceMotion ? .none : .snappy, value: aqi)
+        .modifier(AqiGlassBackground(tint: tint, isDark: colorScheme == .dark))
         .offset(x: heroDrag)
         .simultaneousGesture(heroSwipe)
         .accessibilityAction(named: "Next pinned location") {
@@ -941,7 +935,7 @@ struct HomeView: View {
             return value < 201 ? .black : .white
         }
     }
-    
+
     private func aqiLabel(_ value: Int) -> String {
         switch value {
         case ..<51:  return "Good"
@@ -950,6 +944,27 @@ struct HomeView: View {
         case ..<201: return "Unhealthy"
         case ..<301: return "Very Unhealthy"
         default:     return "Hazardous"
+        }
+    }
+}
+
+private struct AqiGlassBackground: ViewModifier {
+    let tint: Color
+    let isDark: Bool
+
+    func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 24, style: .continuous)
+        if #available(iOS 26, macOS 26, *) {
+            content.glassEffect(
+                .regular.tint(tint.opacity(isDark ? 0.22 : 0.16)).interactive(),
+                in: shape
+            )
+        } else {
+            content.background(
+                shape
+                    .fill(Color(.secondarySystemGroupedBackground))
+                    .overlay(shape.fill(tint.opacity(isDark ? 0.22 : 0.16)))
+            )
         }
     }
 }
