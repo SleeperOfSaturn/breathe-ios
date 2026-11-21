@@ -108,6 +108,13 @@ struct MapView: View {
                 }
             )
             .ignoresSafeArea()
+            .overlay {
+                MapLegend()
+                    .padding(.leading, 16)
+                    .padding(.bottom, 12)
+                    .clearOfReservedRegions(corner: .bottomLeading, footprint: CGSize(width: 260, height: 110))
+                    .allowsHitTesting(false)
+            }
             .toolbar(.hidden, for: .navigationBar)
             .onAppear {
                 frameZonesOnce()
@@ -428,13 +435,15 @@ struct ZoneSheet: View {
                 ToolbarItem(placement: .topBarLeading) {
                     if let url = URL(string: "https://breatheoss.app/zone/\(zone.id)") {
                         ShareLink(item: url, subject: Text("\(zone.name) air quality | Breathe")) {
-                            Image(systemName: "square.and.arrow.up")
+                            Label("Share", systemImage: "square.and.arrow.up")
                         }
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
+                    Button {
                         dismiss()
+                    } label: {
+                        Label("Done", systemImage: "checkmark")
                     }
                 }
             }
@@ -720,6 +729,52 @@ struct ZoneSheet: View {
     }
 }
 
+struct LiveDot: View {
+    var size: CGFloat = 10
+
+    var body: some View {
+        Circle()
+            .fill(Color.green)
+            .frame(width: size, height: size)
+            .overlay(Circle().strokeBorder(Color.white, lineWidth: 2))
+            .shadow(color: Color.green.opacity(0.6), radius: 3)
+    }
+}
+
+struct MapLegend: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                ZStack(alignment: .topTrailing) {
+                    Circle()
+                        .fill(Color.green.opacity(0.85))
+                        .overlay(Circle().strokeBorder(Color.white.opacity(0.9), lineWidth: 1.5))
+                        .frame(width: 18, height: 18)
+                    LiveDot(size: 8)
+                        .offset(x: 2, y: -2)
+                }
+                Text("Sensor zone, live reading")
+            }
+
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(Color.green.opacity(colorScheme == .dark ? 0.3 : 0.18))
+                    .overlay(Circle().strokeBorder(Color.green, lineWidth: 2.5))
+                    .frame(width: 18, height: 18)
+                Text("Estimate zone, no sensor")
+            }
+        }
+        .font(.caption)
+        .fontWeight(.medium)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .accessibilityElement(children: .combine)
+    }
+}
+
 // MARK: - Annotation Marker UI
 struct MapBubbleView: View {
     let bubble: MapBubble
@@ -735,6 +790,11 @@ struct MapBubbleView: View {
                 .frame(width: size, height: size)
                 .shadow(color: .black.opacity(0.2), radius: 3, y: 1)
 
+            if bubble.isLive && bubble.aqi != nil {
+                LiveDot()
+                    .offset(x: 2, y: -2)
+            }
+
             if bubble.count > 1 {
                 Text("\(bubble.count)")
                     .font(.system(size: 10, weight: .bold, design: .rounded))
@@ -743,7 +803,7 @@ struct MapBubbleView: View {
                     .frame(minWidth: 18, minHeight: 18)
                     .background(Capsule().fill(Color(.systemBackground)))
                     .overlay(Capsule().stroke(Color.secondary.opacity(0.3), lineWidth: 0.5))
-                    .offset(x: 8, y: -6)
+                    .offset(x: 8, y: size - 12)
             }
         }
         .accessibilityElement(children: .ignore)

@@ -50,6 +50,8 @@ struct HomeView: View {
     @AppStorage("pinnedOverview") private var pinnedOverview = false
     @State private var isOverviewExpanded = false
     @State private var showPinnedHint = false
+    @State private var pinnedFold = FoldLayout()
+    @State private var dashboardFold = FoldLayout()
     @State private var isWelcomeDeferred = false
     @ScaledMetric(relativeTo: .largeTitle) private var heroNumberSize: CGFloat = 72
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -107,7 +109,7 @@ struct HomeView: View {
                         Button {
                             showReorderSheet = true
                         } label: {
-                            Image(systemName: "arrow.up.arrow.down")
+                            Label("Reorder", systemImage: "arrow.up.arrow.down")
                         }
                         .accessibilityLabel("Reorder pinned locations")
                     }
@@ -295,7 +297,7 @@ struct HomeView: View {
             }
             .padding(.bottom, 6)
         } else {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 12)], spacing: 12) {
+            LazyVGrid(columns: pinnedFold.columns(sizeClass == .regular ? 4 : 2, spacing: 12), spacing: 12) {
                 ForEach(viewModel.pinnedZones) { zone in
                     Button {
                         viewModel.selectedZone = zone
@@ -312,6 +314,7 @@ struct HomeView: View {
                     .buttonStyle(.plain)
                 }
             }
+            .readFold($pinnedFold)
             .padding(.bottom, 10)
         }
     }
@@ -454,30 +457,20 @@ struct HomeView: View {
         let advice = healthAdviceFor(aqi, isUsAqi: viewModel.isUsAqi)
 
         if sizeClass == .regular {
-            Grid(alignment: .top, horizontalSpacing: 16, verticalSpacing: 16) {
+            Grid(alignment: .top, horizontalSpacing: dashboardFold.verticalDivision?.width ?? 16, verticalSpacing: 16) {
                 GridRow {
                     aqiCard(aqi: aqi, response: response, fillsHeight: true)
+                        .frame(width: dashboardFold.verticalDivision?.minX)
 
-                    VStack(spacing: 16) {
-                        ContextRow(systemImage: "heart.fill", tint: aqiColor(aqi), title: advice.title, detail: advice.text)
-                            .card()
-
-                        if let weather = response.weather,
-                           !weather.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                            WeatherContextCard(weather: weather)
-                                .card()
-                        }
-
-                        cigarettesCard(cigarettes: cigarettes)
-                            .card()
-                    }
-                    .frame(maxHeight: .infinity, alignment: .top)
+                    contextGroup(aqi: aqi, advice: advice, weather: response.weather, cigarettes: cigarettes)
+                        .frame(maxHeight: .infinity, alignment: .top)
                 }
 
                 GridRow {
                     VStack(alignment: .leading, spacing: 10) {
                         concentrationsSection(concentrations: response.concentrations)
                     }
+                    .frame(width: dashboardFold.verticalDivision?.minX)
                     .frame(maxHeight: .infinity, alignment: .top)
 
                     VStack(alignment: .leading, spacing: 10) {
@@ -495,17 +488,10 @@ struct HomeView: View {
                     .gridCellColumns(2)
                 }
             }
+            .readFold($dashboardFold)
         } else {
             aqiCard(aqi: aqi, response: response)
-            ContextRow(systemImage: "heart.fill", tint: aqiColor(aqi), title: advice.title, detail: advice.text)
-                .card()
-            if let weather = response.weather,
-               !weather.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                WeatherContextCard(weather: weather)
-                    .card()
-            }
-            cigarettesCard(cigarettes: cigarettes)
-                .card()
+            contextGroup(aqi: aqi, advice: advice, weather: response.weather, cigarettes: cigarettes)
             concentrationsSection(concentrations: response.concentrations)
             nodesSection(response: response)
             historySection(history: response.history, nodes: response.nodes, isAirGradient: isAirGradient)
@@ -695,6 +681,27 @@ struct HomeView: View {
             return
         }
         viewModel.selectedZone = zones[next]
+    }
+
+    private func contextGroup(aqi: Int, advice: HealthAdvice, weather: WeatherInfo?, cigarettes: Double) -> some View {
+        VStack(spacing: 0) {
+            ContextRow(systemImage: "heart.fill", tint: aqiColor(aqi), title: advice.title, detail: advice.text)
+                .padding(16)
+
+            if let weather,
+               !weather.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Divider()
+                    .padding(.leading, 68)
+                WeatherContextCard(weather: weather)
+                    .padding(16)
+            }
+
+            Divider()
+                .padding(.leading, 68)
+            cigarettesCard(cigarettes: cigarettes)
+                .padding(16)
+        }
+        .card(padding: 0)
     }
 
     private func cigarettesCard(cigarettes: Double) -> some View {

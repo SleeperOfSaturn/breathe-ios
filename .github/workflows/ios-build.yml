@@ -3,22 +3,36 @@ name: iOS Build (Xcode)
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - '.github/workflows/**'
-      - '**.md'
+    paths:
+      - 'Breathe/**'
+      - 'BreatheWidget/**'
+      - 'Breathe.xcodeproj/**'
+      - 'BreatheWidgetExtension.entitlements'
+      - '.github/workflows/ios-build.yml'
   workflow_dispatch:
+    inputs:
+      upload:
+        description: Upload this build to TestFlight
+        type: boolean
+        default: true
 
 jobs:
   build:
-    runs-on: macos-26
+    runs-on: xcode-27
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check version bump
+        id: version
+        run: .github/scripts/version-bump.sh "${{ github.event.before }}"
 
       - name: Select Xcode
         run: |
-          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+          sudo xcode-select -s /Applications/Xcode_27.2.app/Contents/Developer
           xcodebuild -version
 
       - name: Install signing certificate
@@ -119,6 +133,9 @@ jobs:
           retention-days: 30
 
       - name: Upload to TestFlight
+        if: >-
+          (github.event_name == 'push' && steps.version.outputs.bumped == 'true') ||
+          (github.event_name == 'workflow_dispatch' && inputs.upload)
         uses: apple-actions/upload-testflight-build@v5
         with:
           app-path: Breathe.ipa

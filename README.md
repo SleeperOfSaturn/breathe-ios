@@ -23,7 +23,7 @@
 
 ## Download
 
-[<img alt="Download on the App Store" height="56" src="https://tools.applemarketingtools.com/api/badges/download-on-the-app-store/black/en-us?size=250x83">](https://apps.apple.com/app/id6761560112)
+[<img alt="Download on the App Store" height="56" src="assets/app-store-badge.svg">](https://apps.apple.com/app/id6761560112)
 
 ---
 
@@ -40,6 +40,7 @@
 - **Swipe between pinned places**, with context menus and haptics
 - **Cigarette equivalence**
 - **Home screen widgets**
+- **iPhone Duo**, with bars on the side, Home grids that split at the fold and a map legend that stays clear of the camera
 - **Follows Reduce Motion**
 
 ## Tech Stack
@@ -110,8 +111,10 @@ BreatheWidget/                  # Widget extension
 
 ### CI
 
-- **Simulator Screenshots** builds every push and shoots each screen on iPhone and iPad, light and dark.
-- **iOS Build** uploads `main` to TestFlight.
+Workflows only run when app, widget or project files change, and build with Xcode 27.2.
+
+- **Simulator Screenshots** shoots iPhone, iPad and iPhone Duo in parallel. The Duo leg folds the simulator with [hinge](https://github.com/artemnovichkov/hinge) and covers closed, open, book and laptop poses. When the version or build number changes on `main`, it also refreshes the README screenshots.
+- **iOS Build** archives `main` and uploads it to TestFlight when the version or build number changed.
 - **App Store Submit** sends a build for review with release notes and screenshots.
 
 ## AQI Data Providers
@@ -150,14 +153,7 @@ We are actively working to deploy custom physical sensors to improve data densit
 We have deployed **AirGradient** sensors in Bandipora, Doda, Ganderbal, Jammu, Kargil, Kathua, Leh, Rajouri, Reasi, Samba, Srinagar & Udhampur (21 sensors across 12 cities as of 24/10/26), which provide an accurate measurement of PM10 and PM2.5 values. The live list is always at [api.breatheoss.app/sensor-info](https://api.breatheoss.app/sensor-info). We are working
 to deploy them in all other regions.
 
-## Credits & Developers
+## Credits
 
-This project is fully Free & Open Source Software (FOSS).
-
-1. [sidharthify](https://github.com/sidharthify) (Lead Dev)
-2. [Flashwreck](https://github.com/Flashwreck) (Lead dev and devops maintainer)
-3. [SleeperOfSaturn](https://github.com/SleeperOfSaturn) (iOS app co-lead)
-4. [Lostless1907](https://github.com/Lostless1907) (Contributor and developer)
-5. [suveshmoza](https://github.com/suveshmoza) (Contributor and developer)
-6. [empirea9](https://github.com/empirea9) (Contributor)
+This project is fully Free & Open Source Software (FOSS). Everyone who has helped build it, in code or otherwise, is listed on [about.breatheoss.app](https://about.breatheoss.app/#people). The list lives in [breathe-OSS/.github](https://github.com/breathe-OSS/.github/blob/main/contributors.json).
 

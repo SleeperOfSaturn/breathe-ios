@@ -3,11 +3,17 @@ name: iOS Build Check
 on:
   push:
     branches: [dev]
+    paths:
+      - 'Breathe/**'
+      - 'BreatheWidget/**'
+      - 'Breathe.xcodeproj/**'
+      - 'BreatheWidgetExtension.entitlements'
+      - '.github/workflows/build-check.yml'
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: macos-26
+    runs-on: xcode-27
 
     steps:
       - name: Checkout
@@ -15,7 +21,7 @@ jobs:
 
       - name: Select Xcode
         run: |
-          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+          sudo xcode-select -s /Applications/Xcode_27.2.app/Contents/Developer
           xcodebuild -version
 
       - name: Build (no signing)
